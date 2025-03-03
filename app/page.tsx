@@ -34,8 +34,8 @@ declare global {
 
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<number | null>(null);
-  const [clickedGames, setClickedGames] = useState<Set<number>>(new Set());
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
+  const [clickedGames, setClickedGames] = useState<Set<number>>(new Set());
   const [isPlaying, setIsPlaying] = useState(false);
 
   const games = [
@@ -202,9 +202,17 @@ export default function Home() {
         width: "0",
         playerVars: {
           autoplay: 0,
+          playsinline: 1,
         },
       });
       setPlayer(newPlayer);
+    };
+
+    // Fonction de nettoyage
+    return () => {
+      if (player) {
+        player.pauseVideo();
+      }
     };
   }, []);
 
@@ -219,8 +227,23 @@ export default function Home() {
       )?.[1];
 
       if (videoId) {
-        player.loadVideoById(videoId);
-        setIsPlaying(true);
+        // Ajouter une interaction utilisateur explicite pour iOS
+        const userInteraction = () => {
+          player.loadVideoById(videoId);
+          setIsPlaying(true);
+          document.removeEventListener('touchend', userInteraction);
+        };
+        
+        // Sur les appareils tactiles (iOS), on attend une interaction tactile
+        if (/iPhone|iPad|iPod|Mac/.test(navigator.userAgent)) {
+          document.addEventListener('touchend', userInteraction, { once: true });
+          // Informer l'utilisateur qu'une action est nécessaire
+          alert("Touchez l'écran pour activer le son");
+        } else {
+          // Sur les autres appareils, on peut charger directement
+          player.loadVideoById(videoId);
+          setIsPlaying(true);
+        }
       }
     }
   };
