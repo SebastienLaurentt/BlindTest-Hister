@@ -1,6 +1,5 @@
-'use client'
+"use client";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -35,7 +34,9 @@ declare global {
 
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<number | null>(null);
+  const [clickedGames, setClickedGames] = useState<Set<number>>(new Set());
   const [player, setPlayer] = useState<YouTubePlayer | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const games = [
     {
@@ -189,16 +190,16 @@ export default function Home() {
   // Ajouter un useEffect pour charger l'API YouTube
   useEffect(() => {
     // Charger l'API YouTube
-    const tag = document.createElement('script');
+    const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
+    const firstScriptTag = document.getElementsByTagName("script")[0];
     firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
     // Définir la fonction onYouTubeIframeAPIReady
     window.onYouTubeIframeAPIReady = () => {
-      const newPlayer = new window.YT.Player('youtube-player', {
-        height: '0',
-        width: '0',
+      const newPlayer = new window.YT.Player("youtube-player", {
+        height: "0",
+        width: "0",
         playerVars: {
           autoplay: 0,
         },
@@ -209,14 +210,17 @@ export default function Home() {
 
   const handleGameClick = (gameId: number) => {
     setSelectedGame(gameId);
-    
+    setClickedGames(prev => new Set(prev).add(gameId));
+
     const game = games.find((g) => g.id === gameId);
     if (game && player) {
-      // Extraire l'ID de la vidéo YouTube de l'URL
-      const videoId = game.url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/)?.[1];
-      
+      const videoId = game.url.match(
+        /(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([^"&?\/\s]{11})/
+      )?.[1];
+
       if (videoId) {
         player.loadVideoById(videoId);
+        setIsPlaying(true);
       }
     }
   };
@@ -231,43 +235,21 @@ export default function Home() {
 
       <main className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
-          Grille de Jeux Vidéo
+          Hister
         </h1>
 
         {/* Ajouter un div invisible pour le lecteur YouTube */}
-        <div id="youtube-player" style={{ display: 'none' }}></div>
-
-        {selectedGame && (
-          <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-              {games.find((g) => g.id === selectedGame)?.name}
-            </h2>
-            <Button
-              variant="outline"
-              className="mt-2"
-              onClick={() => {
-                if (player) {
-                  const state = player.getPlayerState();
-                  if (state === 1) { // 1 = playing
-                    player.pauseVideo();
-                  } else {
-                    player.playVideo();
-                  }
-                }
-              }}
-            >
-              {player && player.getPlayerState() === 1 ? "Pause" : "Jouer"}
-            </Button>
-          </div>
-        )}
+        <div id="youtube-player" style={{ display: "none" }}></div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {games.map((game) => (
             <Card
               key={game.id}
-              className={`p-4 cursor-pointer transition-colors duration-200 hover:shadow-lg 
+              className={`p-4 py-8 cursor-pointer transition-colors duration-200 hover:shadow-lg 
                 ${
-                  selectedGame === game.id
+                  selectedGame === game.id && isPlaying
+                    ? "bg-green-500 text-white"
+                    : clickedGames.has(game.id)
                     ? "bg-red-500 text-white"
                     : "bg-white dark:bg-gray-800 text-gray-800 dark:text-white"
                 }`}
@@ -276,7 +258,6 @@ export default function Home() {
               <div className="flex items-center justify-center">
                 <span className="font-bold text-lg">{game.id}</span>
               </div>
-              <div className="mt-2 text-center text-sm">{game.name}</div>
             </Card>
           ))}
         </div>
