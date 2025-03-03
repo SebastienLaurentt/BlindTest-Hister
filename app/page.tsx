@@ -57,7 +57,7 @@ export default function Home() {
     {
       id: 4,
       name: "Donkey Kong (1981)",
-      url: "https://youtube.com/shorts/HC9CHt0LpJo?si=piF4b-5OAgK995zQ",
+      url: "https://www.youtube.com/watch?v=GKYUNtGrShc",
     },
     {
       id: 5,
